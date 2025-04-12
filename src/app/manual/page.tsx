@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export default function ManualPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-max bg-background">
       <div className="container mx-auto p-4">
         <div className="flex items-center gap-4 mb-6">
           <Link href="/">

@@ -1,5 +1,4 @@
 "use client";
-import { Sidebar } from './Sidebar';
 import { RobotMap } from './RobotMap';
 import { ControlPanel } from './ControlPanel';
 import { RobotProvider } from '@/lib/robot-context';
@@ -7,6 +6,8 @@ import { RobotData } from '@/lib/types';
 import { StatusPanel } from './StatusPanel';
 import { useEffect, useState } from 'react';
 import { MotorControlPanel } from './MotorControlPanel';
+import { NavButtons } from './NavButtons';
+import { ShelfTracker } from './ShelfTracker';
 
 interface DashboardProps {
   initialStatus?: RobotData;
@@ -49,11 +50,225 @@ export function Dashboard({
   executeCirclePattern = () => {},
   executeDancePattern = () => {}
 }: DashboardProps) {
+  const [activeNavSection, setActiveNavSection] = useState(0);
+
+  const handleNavSelect = (index: number) => {
+    setActiveNavSection(index);
+    // You could add additional logic here to show/hide different sections
+  };
+
+  // Show different content based on active section
+  const renderActiveSection = () => {
+    switch (activeNavSection) {
+      case 0: // Home/Dashboard
+        return (
+          <>
+            {/* Sensor Data Display */}
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Distance Sensor Card */}
+              <div className="bg-[#2A2A2A]/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4">
+                <h3 className="text-gray-400 text-sm font-medium mb-2">Distance</h3>
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span className="text-2xl font-bold text-white">{sensorData.distance.toFixed(1)} cm</span>
+                </div>
+              </div>
+              
+              {/* Battery Card */}
+              <div className="bg-[#2A2A2A]/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4">
+                <h3 className="text-gray-400 text-sm font-medium mb-2">Battery</h3>
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
+                    style={{ color: sensorData.battery < 3.5 ? '#ef4444' : '#4ade80' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                  </svg>
+                  <span className="text-2xl font-bold" style={{ color: sensorData.battery < 3.5 ? '#ef4444' : '#4ade80' }}>
+                    {sensorData.battery.toFixed(1)} V
+                  </span>
+                </div>
+              </div>
+              
+              {/* Temperature Card */}
+              <div className="bg-[#2A2A2A]/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4">
+                <h3 className="text-gray-400 text-sm font-medium mb-2">Temperature</h3>
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-orange-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span className="text-2xl font-bold text-white">{sensorData.temperature.toFixed(1)} °C</span>
+                </div>
+              </div>
+              
+              {/* Avoidance Mode Toggle */}
+              <div className="bg-[#2A2A2A]/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4">
+                <h3 className="text-gray-400 text-sm font-medium mb-2">Obstacle Avoidance</h3>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => toggleAvoidanceMode(!avoidanceMode)}
+                    className={`flex items-center px-4 py-2 rounded-md transition-colors ${
+                      avoidanceMode 
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    {avoidanceMode ? 'Enabled' : 'Disabled'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col lg:flex-row justify-between gap-6">
+              <div className="flex-1">
+                <RobotMap />
+              </div>
+              <div className="w-full lg:w-auto flex flex-1 flex-col gap-6">
+                <MotorControlPanel 
+                  isConnected={isConnected}
+                  sendCommand={sendCommand}
+                  activeKeys={activeKeys}
+                  status={webSocketStatus}
+                  speed={speed}
+                  handleSpeedChange={handleSpeedChange}
+                />
+                
+                {/* Special Patterns Section */}
+                <div className="bg-[#1A1A1A]/60 backdrop-blur-sm border border-gray-800 rounded-lg p-4">
+                  <h2 className="text-xl font-bold text-white mb-4">Special Patterns</h2>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={executeDancePattern}
+                      disabled={!isConnected}
+                      className={`flex items-center justify-center px-4 py-3 rounded-md transition-colors ${
+                        isConnected 
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                          : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Dance Pattern
+                    </button>
+                    <button
+                      onClick={executeCirclePattern}
+                      disabled={!isConnected}
+                      className={`flex items-center justify-center px-4 py-3 rounded-md transition-colors ${
+                        isConnected 
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                          : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Circle Pattern
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      case 1: // Map
+        return (
+          <div className="flex flex-col gap-6 h-[calc(100vh-12rem)]">
+            <div className="flex-1 h-full min-h-[500px] bg-[#1A1A1A]/60 backdrop-blur-md border border-gray-800 rounded-lg overflow-hidden">
+              <RobotMap />
+            </div>
+            <StatusPanel />
+          </div>
+        );
+      case 2: // Controls
+        return (
+          <div className="flex flex-col gap-6">
+            <MotorControlPanel 
+              isConnected={isConnected}
+              sendCommand={sendCommand}
+              activeKeys={activeKeys}
+              status={webSocketStatus}
+              speed={speed}
+              handleSpeedChange={handleSpeedChange}
+            />
+          </div>
+        );
+      case 3: // Stats/Analytics
+        return (
+          <div className="flex flex-col gap-6">
+            <ShelfTracker />
+            <StatusPanel />
+          </div>
+        );
+      case 4: // Settings
+        return (
+          <div className="flex flex-col gap-6">
+            <div className="bg-[#1A1A1A]/60 backdrop-blur-md border border-gray-800 rounded-lg p-5">
+              <h2 className="text-xl font-bold text-white mb-4">Settings</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="ip-address" className="block text-sm font-medium text-gray-400 mb-1">ESP32 IP Address</label>
+                    <input
+                      id="ip-address"
+                      type="text"
+                      value={esp32Ip}
+                      onChange={(e) => setEsp32Ip(e.target.value)}
+                      className="w-full px-3 py-2 text-sm bg-[#2A2A2A]/40 backdrop-blur-sm border border-gray-700/50 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-gray-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Avoidance Mode</label>
+                    <div className="mt-1">
+                      <button
+                        onClick={() => toggleAvoidanceMode(!avoidanceMode)}
+                        className={`w-full flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
+                          avoidanceMode 
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                            : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                        }`}
+                      >
+                        {avoidanceMode ? 'Enabled' : 'Disabled'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Robot Speed</label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="range"
+                        min="0"
+                        max="255"
+                        value={speed}
+                        onChange={(e) => handleSpeedChange(parseInt(e.target.value))}
+                        className="flex-1 h-1 bg-white/10 rounded-full appearance-none cursor-pointer
+                                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 
+                                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 
+                                  [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(37,99,235,0.5)]"
+                      />
+                      <span className="text-white w-8">{speed}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <RobotProvider initialStatus={initialStatus}>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-        <Sidebar />
-        <div className="ml-16">
+        <div className="w-full">
           <div className="p-6">
             {/* Custom Header Section */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -88,121 +303,22 @@ export function Dashboard({
             </header>
           
             <main className="flex flex-col">
-              {/* Sensor Data Display */}
-              <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Distance Sensor Card */}
-                <div className="bg-[#2A2A2A]/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4">
-                  <h3 className="text-gray-400 text-sm font-medium mb-2">Distance</h3>
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span className="text-2xl font-bold text-white">{sensorData.distance.toFixed(1)} cm</span>
-                  </div>
-                </div>
-                
-                {/* Battery Card */}
-                <div className="bg-[#2A2A2A]/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4">
-                  <h3 className="text-gray-400 text-sm font-medium mb-2">Battery</h3>
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" 
-                      style={{ color: sensorData.battery < 3.5 ? '#ef4444' : '#4ade80' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                    </svg>
-                    <span className="text-2xl font-bold" style={{ color: sensorData.battery < 3.5 ? '#ef4444' : '#4ade80' }}>
-                      {sensorData.battery.toFixed(1)} V
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Temperature Card */}
-                <div className="bg-[#2A2A2A]/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4">
-                  <h3 className="text-gray-400 text-sm font-medium mb-2">Temperature</h3>
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-orange-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    <span className="text-2xl font-bold text-white">{sensorData.temperature.toFixed(1)} °C</span>
-                  </div>
-                </div>
-                
-                {/* Avoidance Mode Toggle */}
-                <div className="bg-[#2A2A2A]/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4">
-                  <h3 className="text-gray-400 text-sm font-medium mb-2">Obstacle Avoidance</h3>
-                  <div className="flex items-center">
-                    <button
-                      onClick={() => toggleAvoidanceMode(!avoidanceMode)}
-                      className={`flex items-center px-4 py-2 rounded-md transition-colors ${
-                        avoidanceMode 
-                          ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-                          : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                      }`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                      {avoidanceMode ? 'Enabled' : 'Disabled'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex flex-col lg:flex-row justify-between gap-6">
-                <div className="flex-1">
-                  <RobotMap />
-                </div>
-                <div className="w-full lg:w-auto flex flex-1 flex-col gap-6">
-                  {/* <ControlPanel /> */}
-                  <MotorControlPanel 
-                    isConnected={isConnected}
-                    sendCommand={sendCommand}
-                    activeKeys={activeKeys}
-                    status={webSocketStatus}
-                    speed={speed}
-                    handleSpeedChange={handleSpeedChange}
-                  />
-                  
-                  {/* Special Patterns Section */}
-                  <div className="bg-[#1A1A1A]/60 backdrop-blur-sm border border-gray-800 rounded-lg p-4">
-                    <h2 className="text-xl font-bold text-white mb-4">Special Patterns</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                      <button
-                        onClick={executeDancePattern}
-                        disabled={!isConnected}
-                        className={`flex items-center justify-center px-4 py-3 rounded-md transition-colors ${
-                          isConnected 
-                            ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                        }`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Dance Pattern
-                      </button>
-                      <button
-                        onClick={executeCirclePattern}
-                        disabled={!isConnected}
-                        className={`flex items-center justify-center px-4 py-3 rounded-md transition-colors ${
-                          isConnected 
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                        }`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Circle Pattern
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <StatusPanel />
+              {renderActiveSection()}
             </main>
           </div>
         </div>
+        
+        {/* Fixed bottom navigation */}
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+          <NavButtons 
+            variant="floating" 
+            onSelect={handleNavSelect}
+            className="shadow-[0_8px_16px_rgba(0,0,0,0.3)]"
+          />
+        </div>
+
+        {/* Add some padding at the bottom to prevent content from being hidden behind the navbar */}
+        <div className="h-20"></div>
       </div>
     </RobotProvider>
   );
