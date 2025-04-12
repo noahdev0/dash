@@ -2,16 +2,11 @@
 import { motion } from 'framer-motion';
 import { useRobot } from '@/lib/robot-context';
 import { ZoomIn, ZoomOut, Package, Home, Play, Pause, RotateCcw, FastForward } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-
-// Define path point types
-interface PathPoint {
-  x: number;
-  y: number;
-}
+import { useState, useEffect, useRef, useContext } from 'react';
+import { useWebSocket, PathPoint } from '@/hooks/useWebSocket';
 
 export function RobotMap() {
-  const { data, sendCommand } = useRobot();
+  const { data, sendCommand: sendRobotCommand } = useRobot();
   const [zoom, setZoom] = useState(1);
   const [isAnimating, setIsAnimating] = useState(false);
   const [robotPosition, setRobotPosition] = useState({ x: 0, y: 0, orientation: 0 });
@@ -21,6 +16,17 @@ export function RobotMap() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [missionState, setMissionState] = useState<'idle' | 'scanning' | 'moving' | 'delivering' | 'returning'>('idle');
   const [isMapVisible, setIsMapVisible] = useState(true);
+  const [esp32Ip, setEsp32Ip] = useState<string>("192.168.33.97");
+  const { updateRobotPosition, startFollowingPath, stopFollowingPath, isFollowingPath } = useWebSocket(`ws://${esp32Ip}:81`);
+  
+  // Get ESP32 IP from local storage if available
+  useEffect(() => {
+    const storedIp = localStorage.getItem('esp32Ip');
+    if (storedIp) {
+      setEsp32Ip(storedIp);
+    }
+    // Default IP is already set in the initial state
+  }, []);
   
   // Total map dimensions (150x150)
   const mapWidth = 1500;
@@ -266,8 +272,8 @@ export function RobotMap() {
         break;
       case 'TAG4': // Blue tag
         path.push({ x: 67.5, y: 50 }); // Move to second intersection
-        path.push({ x: 67.5, y: 120 }); // Move down to center bottom
-        path.push({ x: 90, y: 120 }); // Move to tag
+        path.push({ x: 90, y: 50 }); // Move right
+        path.push({ x: 90, y: 120 }); // Move down to tag
         break;
     }
     
@@ -289,7 +295,7 @@ export function RobotMap() {
     setIsMapVisible(true); // Ensure map is visible when mission starts
     
     // Update robot state in data context
-    sendCommand('scan_tag');
+    sendRobotCommand('scan_tag');
     
     // Start mission sequence
     setMissionState('scanning');
@@ -297,6 +303,9 @@ export function RobotMap() {
     // Generate path to selected tag
     const newPath = generatePathToTag(tagId);
     setActivePath([...newPath, newPath[0]]); // Close the path
+    
+    // Send the path to the WebSocket hook for physical robot control
+    startFollowingPath(newPath);
     
     // Start scanning animation
     setTimeout(() => {
@@ -311,6 +320,12 @@ export function RobotMap() {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
+      
+      // Stop the physical robot if animation is stopped
+      if (isFollowingPath) {
+        stopFollowingPath();
+      }
+      
       return;
     }
 
@@ -318,7 +333,7 @@ export function RobotMap() {
     const duration = 20000 / animationSpeed; // 20 seconds for a complete loop at normal speed
     
     // Calculate the starting progress based on current mission state
-    const startProgress = pathProgress;
+    let startProgress = pathProgress;
     
     const animate = () => {
       const currentTime = Date.now();
@@ -340,9 +355,18 @@ export function RobotMap() {
       setPathProgress(newProgress);
       const { point, orientation } = getPointOnPath(newProgress);
       
-      setRobotPosition({
+      const newRobotPosition = {
         x: scalePosition(point.x, mapWidth),
         y: scalePosition(point.y, mapHeight),
+        orientation
+      };
+      
+      setRobotPosition(newRobotPosition);
+      
+      // Update robot position in WebSocket hook for physical robot control
+      updateRobotPosition({
+        x: point.x,
+        y: point.y,
         orientation
       });
       
@@ -356,7 +380,7 @@ export function RobotMap() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isAnimating, animationSpeed, missionState]);
+  }, [isAnimating, animationSpeed, missionState, pathProgress, isFollowingPath, stopFollowingPath, updateRobotPosition]);
 
   // Handle mission state changes
   useEffect(() => {
@@ -369,7 +393,7 @@ export function RobotMap() {
       
       // Show delivery animation
       setTimeout(() => {
-        sendCommand('deliver_package');
+        sendRobotCommand('deliver_package');
         
         // Continue the journey back
         setTimeout(() => {
@@ -387,6 +411,13 @@ export function RobotMap() {
       setRobotPosition({
         x: scalePosition(0, mapWidth),
         y: scalePosition(0, mapHeight),
+        orientation: 270
+      });
+      
+      // Update physical robot position
+      updateRobotPosition({
+        x: 0,
+        y: 0,
         orientation: 270
       });
       
@@ -412,10 +443,10 @@ export function RobotMap() {
         setSelectedTag(null);
         setActivePath(closedPath);
         setPathProgress(0);
-        sendCommand('mission_complete');
+        sendRobotCommand('mission_complete');
       }, 2000);
     }
-  }, [pathProgress, missionState]);
+  }, [pathProgress, missionState, updateRobotPosition, sendRobotCommand]);
 
   // Handle zoom
   const increaseZoom = () => setZoom(prev => Math.min(prev + 0.2, 2));
@@ -423,7 +454,9 @@ export function RobotMap() {
   const resetZoom = () => setZoom(1);
 
   // Toggle animation
-  const toggleAnimation = () => setIsAnimating(prev => !prev);
+  const toggleAnimation = () => {
+    setIsAnimating(prev => !prev);
+  };
   
   // Reset animation
   const resetAnimation = () => {
@@ -435,6 +468,18 @@ export function RobotMap() {
       y: scalePosition(point.y, mapHeight),
       orientation
     });
+    
+    // Reset the physical robot
+    updateRobotPosition({
+      x: point.x,
+      y: point.y,
+      orientation
+    });
+    
+    // Stop following path if active
+    if (isFollowingPath) {
+      stopFollowingPath();
+    }
   };
   
   // Increase animation speed
@@ -454,6 +499,9 @@ export function RobotMap() {
         const newPath = generatePathToTag(targetTag);
         setActivePath([...newPath, newPath[0]]); // Close the path
         
+        // Send the path to the WebSocket hook for physical robot control
+        startFollowingPath(newPath);
+        
         // Start scanning animation
         setTimeout(() => {
           setMissionState('moving');
@@ -461,7 +509,7 @@ export function RobotMap() {
         }, 2000);
       }
     }
-  }, [data.navigation.currentState, data.mission.current.package.destination]);
+  }, [data.navigation.currentState, data.mission.current.package.destination, missionState, startFollowingPath]);
 
   // Function to find the closest point on the path to a given tag
   const getClosestPointOnPath = (tag: typeof rfidTags[0]): PathPoint => {
@@ -628,7 +676,7 @@ export function RobotMap() {
                 />
                 
                 {/* RFID Tags */}
-                {rfidTags.map((tag) => {
+                {rfidTags.map((tag, index) => {
                   // Only allow hover effect when not in a mission or if this is the selected tag
                   const isInteractive = missionState === 'idle' || selectedTag === tag.id;
                   const shouldScale = 
@@ -832,13 +880,13 @@ export function RobotMap() {
                   <circle 
                     cx="0" 
                     cy="0" 
-                    r="40" 
+                    r="12" 
                     fill="rgba(147, 51, 234, 0.8)" 
                   />
                   <circle 
                     cx="0" 
                     cy="0" 
-                    r="20" 
+                    r="12" 
                     fill="none" 
                     stroke="white" 
                     strokeWidth="2" 
@@ -885,14 +933,14 @@ export function RobotMap() {
                   />
                   
                   {/* Wheels */}
-                  <rect x="-12" y="-2" width="12" height="12" fill="rgba(255,255,255,0.5)" />
-                  <rect x="8" y="-2" width="12" height="12" fill="rgba(255,255,255,0.5)" />
+                  <rect x="-12" y="-2" width="4" height="4" fill="rgba(255,255,255,0.5)" />
+                  <rect x="8" y="-2" width="4" height="4" fill="rgba(255,255,255,0.5)" />
                   
                   {/* Package indicator (if carrying) */}
                   {data.hardware.sensors.packageDetector.status === "package_present" && (
-                    <foreignObject x="-8" y="-8" width="30" height="30">
+                    <foreignObject x="-8" y="-8" width="16" height="16">
                       <div className="flex items-center justify-center h-full">
-                        <Package size={25} className="text-white" />
+                        <Package size={12} className="text-white" />
                       </div>
                     </foreignObject>
                   )}
