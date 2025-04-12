@@ -1,0 +1,331 @@
+{
+  "system": {
+    "status": "active",
+    "mode": "automatic",
+    "battery": {
+      "level": 87,
+      "voltage": 11.4,
+      "charging": false,
+      "estimatedRuntime": 120 // minutes
+    },
+    "connectivity": {
+      "wifi": {
+        "connected": true,
+        "ssid": "RobotNetwork",
+        "signalStrength": -65,
+        "ipAddress": "192.168.1.105"
+      },
+      "lastHeartbeat": "2025-04-11T14:32:45Z",
+      "latency": 23 // ms
+    },
+    "errors": [],
+    "warnings": ["Battery below 90%"],
+    "uptime": 14582 // seconds
+  },
+  
+  "hardware": {
+    "motorLeft": {
+      "speed": 180,
+      "direction": "forward",
+      "currentDraw": 0.24, // amps
+      "temperature": 32.5, // celsius
+      "status": "running"
+    },
+    "motorRight": {
+      "speed": 175,
+      "direction": "forward",
+      "currentDraw": 0.26, // amps
+      "temperature": 33.1, // celsius
+      "status": "running"
+    },
+    "servoDeployer": {
+      "position": 0, // degrees (0 = retracted, 90 = deployed)
+      "status": "ready"
+    },
+    "sensors": {
+      "irSensors": {
+        "left": {
+          "value": 785, // analog reading 0-1023
+          "threshold": 500,
+          "state": "off_line" // on_line or off_line
+        },
+        "center": {
+          "value": 235,
+          "threshold": 500,
+          "state": "on_line"
+        },
+        "right": {
+          "value": 820,
+          "threshold": 500,
+          "state": "off_line"
+        }
+      },
+      "rfidReader": {
+        "status": "active",
+        "lastScan": "2025-04-11T14:30:12Z",
+        "signalStrength": 92 // percent
+      },
+      "packageDetector": {
+        "value": 1, // binary 0 or 1
+        "status": "package_present"
+      }
+    }
+  },
+  
+  "navigation": {
+    "currentState": "following_line",
+    "states": ["idle", "loading", "following_line", "approaching_shelf", "deploying_package", "returning"],
+    "lineFollowing": {
+      "speed": "normal", // slow, normal, fast
+      "pidController": {
+        "proportional": 2.5,
+        "integral": 0.02,
+        "derivative": 1.8,
+        "lastError": -0.12,
+        "setpoint": 0
+      },
+      "position": {
+        "x": 125, // cm, relative to start
+        "y": 45,
+        "orientation": 87 // degrees
+      }
+    },
+    "path": {
+      "totalLength": 850, // cm
+      "completed": 125, // cm
+      "percentComplete": 14.7,
+      "estimatedTimeRemaining": 145 // seconds
+    }
+  },
+  
+  "mission": {
+    "status": "in_progress",
+    "current": {
+      "id": "DEL-2025-04-11-042",
+      "startTime": "2025-04-11T14:28:30Z",
+      "estimatedCompletionTime": "2025-04-11T14:35:15Z",
+      "package": {
+        "id": "PKG-7823",
+        "rfidTag": "E4A256B9C3D1",
+        "weight": 0.45, // kg
+        "destination": "shelf-2",
+        "priority": "normal" // low, normal, high, urgent
+      },
+      "route": [
+        {
+          "point": "loading_station",
+          "status": "completed",
+          "arrivalTime": "2025-04-11T14:28:30Z",
+          "departureTime": "2025-04-11T14:30:15Z"
+        },
+        {
+          "point": "junction_1",
+          "status": "in_progress",
+          "estimatedArrival": "2025-04-11T14:32:52Z"
+        },
+        {
+          "point": "shelf-2",
+          "status": "pending",
+          "estimatedArrival": "2025-04-11T14:34:30Z"
+        },
+        {
+          "point": "loading_station",
+          "status": "pending",
+          "estimatedArrival": "2025-04-11T14:37:45Z"
+        }
+      ]
+    },
+    "history": [
+      {
+        "id": "DEL-2025-04-11-041",
+        "startTime": "2025-04-11T14:10:05Z",
+        "completionTime": "2025-04-11T14:18:22Z",
+        "package": {
+          "id": "PKG-7822",
+          "rfidTag": "A1B2C3D4E5F6",
+          "destination": "shelf-1",
+          "status": "delivered"
+        }
+      },
+      {
+        "id": "DEL-2025-04-11-040",
+        "startTime": "2025-04-11T13:55:12Z",
+        "completionTime": "2025-04-11T14:03:40Z",
+        "package": {
+          "id": "PKG-7821",
+          "rfidTag": "F5E4D3C2B1A0",
+          "destination": "shelf-3",
+          "status": "delivered"
+        }
+      }
+    ]
+  },
+  
+  "environment": {
+    "shelves": [
+      {
+        "id": "shelf-1",
+        "rfidTag": "S001-RFID-TAG",
+        "location": {
+          "x": 200,
+          "y": 50
+        },
+        "status": "available",
+        "packages": 5
+      },
+      {
+        "id": "shelf-2",
+        "rfidTag": "S002-RFID-TAG",
+        "location": {
+          "x": 450,
+          "y": 50
+        },
+        "status": "destination",
+        "packages": 3
+      },
+      {
+        "id": "shelf-3",
+        "rfidTag": "S003-RFID-TAG",
+        "location": {
+          "x": 700,
+          "y": 50
+        },
+        "status": "available",
+        "packages": 7
+      }
+    ],
+    "obstacles": [
+      {
+        "id": "obs-1",
+        "type": "static",
+        "location": {
+          "x": 300,
+          "y": 70
+        },
+        "dimensions": {
+          "width": 20,
+          "height": 20
+        },
+        "avoidanceStatus": "not_in_path"
+      }
+    ],
+    "loadingStation": {
+      "status": "ready",
+      "packagesQueued": 2,
+      "location": {
+          "x": 50,
+          "y": 50
+      }
+    }
+  },
+  
+  "commands": {
+    "available": ["start", "stop", "pause", "resume", "return_to_base", "manual_control"],
+    "lastCommand": {
+      "type": "start",
+      "timestamp": "2025-04-11T14:28:30Z",
+      "source": "web_ui",
+      "status": "executed"
+    },
+    "manualControl": {
+      "enabled": false,
+      "leftMotor": 0,
+      "rightMotor": 0,
+      "deployPackage": false
+    }
+  },
+  
+  "analytics": {
+    "packagesDelivered": {
+      "today": 12,
+      "thisWeek": 87,
+      "total": 1245
+    },
+    "distanceTraveled": {
+      "today": 452.7, // meters
+      "thisWeek": 3245.5,
+      "total": 57892.3
+    },
+    "efficiency": {
+      "averageDeliveryTime": 463, // seconds
+      "successRate": 99.7, // percent
+      "batteryUsagePerDelivery": 0.9 // percent
+    },
+    "errors": {
+      "lineFollowingLost": 0,
+      "rfidReadFailures": 1,
+      "packageDetectionFailures": 0,
+      "deploymentFailures": 0
+    }
+  },
+  
+  "eventLog": [
+    {
+      "timestamp": "2025-04-11T14:30:12Z",
+      "level": "info",
+      "message": "Package PKG-7823 detected and RFID scanned successfully",
+      "data": {
+        "rfidTag": "E4A256B9C3D1",
+        "destination": "shelf-2"
+      }
+    },
+    {
+      "timestamp": "2025-04-11T14:30:15Z",
+      "level": "info",
+      "message": "Mission DEL-2025-04-11-042 started",
+      "data": {
+        "packageId": "PKG-7823"
+      }
+    },
+    {
+      "timestamp": "2025-04-11T14:31:05Z",
+      "level": "warning",
+      "message": "Slight line deviation detected, correcting course",
+      "data": {
+        "deviation": "left",
+        "correction": "minor"
+      }
+    },
+    {
+      "timestamp": "2025-04-11T14:32:00Z",
+      "level": "info",
+      "message": "Battery level at 87%, sufficient for current mission",
+      "data": {
+        "batteryLevel": 87,
+        "estimatedRuntime": 120
+      }
+    }
+  ],
+  
+  "settings": {
+    "lineFollowing": {
+      "baseSpeed": 180,
+      "turnSpeed": 150,
+      "slowSpeed": 120,
+      "sensorThreshold": 500
+    },
+    "rfid": {
+      "scanInterval": 500, // ms
+      "requiredSignalStrength": 80 // percent
+    },
+    "packageDeployment": {
+      "deploymentDuration": 2000, // ms
+      "confirmationRequired": true
+    },
+    "systemPreferences": {
+      "autoReturnWhenIdle": true,
+      "lowBatteryThreshold": 20,
+      "criticalBatteryThreshold": 10,
+      "telemetryInterval": 1000 // ms
+    }
+  },
+  
+  "maintenance": {
+    "lastMaintenance": "2025-04-01T09:15:00Z",
+    "nextScheduledMaintenance": "2025-05-01T09:00:00Z",
+    "motorLeftRuntime": 342.5, // hours
+    "motorRightRuntime": 343.2, // hours
+    "firmwareVersion": "v2.4.1",
+    "availableUpdate": null
+  }
+}

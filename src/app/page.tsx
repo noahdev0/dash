@@ -1,103 +1,203 @@
-import Image from "next/image";
+import { Dashboard } from "@/components/dashboard/Dashboard";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // Robot system status information
+  const robotStatus = {
+    hardware: {
+      engines: {
+        leftMotor: {
+          status: "normal",
+          temperature: 0,
+          efficiency: 0,
+          rpm: 0,
+        },
+        rightMotor: {
+          status: "normal",
+          temperature: 0,
+          efficiency: 0,
+          rpm: 0,
+        },
+      },
+      sensors: {
+        lineDetector: {
+          status: "normal",
+          accuracy: 97,
+          lastCalibration: "2023-10-25",
+        },
+        rfidReader: {
+          status: "normal",
+          signalStrength: 88,
+          detectionRange: 10,
+          lastScan: new Date(Date.now() - 300000).toISOString(),
+        },
+        proximityFront: { status: "normal", distance: 120 },
+        proximityRear: { status: "normal", distance: 150 },
+        packageDetector: {
+          status: "package_present",
+          weightKg: 1.25,
+          value: 95,
+        },
+        irSensors: {
+          left: { value: 50, threshold: 70, state: "off_line" },
+          center: { value: 90, threshold: 70, state: "on_line" },
+          right: { value: 45, threshold: 70, state: "off_line" },
+        },
+      },
+      battery: {
+        level: 82,
+        temperature: 38,
+        timeRemaining: 240,
+        cycles: 125,
+        voltage: 11.8,
+      },
+      motorLeft: {
+        speed: 0,
+        direction: "forward",
+        currentDraw: 0.2,
+        temperature: 25,
+        status: "idle",
+      },
+      motorRight: {
+        speed: 0,
+        direction: "forward",
+        currentDraw: 0.2,
+        temperature: 25,
+        status: "idle",
+      },
+      servoDeployer: {
+        position: 0,
+        status: "idle",
+      },
+    },
+    system: {
+      status: "active",
+      mode: "automatic",
+      battery: {
+        level: 85,
+        voltage: 12.6,
+        charging: false,
+        estimatedRuntime: 180,
+        temperature: 38,
+        timeRemaining: 240,
+        cycles: 125,
+      },
+      errors: [],
+      warnings: [],
+      cpu: { usage: 32, temperature: 45 },
+      memory: { used: 128, total: 512, usage: 25 },
+      storage: { used: 2.4, total: 8, usage: 30 },
+      connectivity: {
+        wifi: {
+          connected: true,
+          signalStrength: 75,
+          network: "RobotNet",
+          ssid: "Robot_Network",
+          ipAddress: "192.168.1.120",
+        },
+        bluetooth: { connected: false, status: "disabled" },
+        lastHeartbeat: new Date().toISOString(),
+        latency: 12,
+      },
+      uptime: 14520, // in seconds
+    },
+    navigation: {
+      currentState: "following_line",
+      speed: 0.5, // meters per second
+      orientation: 90, // degrees
+      position: { x: 45, y: 25 },
+      currentRoute: "home_to_station1",
+      pathCompletion: 67, // percentage
+      states: [
+        "idle",
+        "scanning",
+        "moving",
+        "delivering",
+        "returning",
+        "following_line",
+      ],
+      lineFollowing: {
+        speed: "normal",
+        pidController: {
+          proportional: 1.2,
+          integral: 0.01,
+          derivative: 0.8,
+          lastError: 0,
+          setpoint: 0,
+        },
+        position: {
+          x: 45,
+          y: 25,
+          orientation: 90,
+        },
+      },
+      path: {
+        totalLength: 100,
+        completed: 67,
+        percentComplete: 67,
+        estimatedTimeRemaining: 30,
+      },
+    },
+    mission: {
+      current: {
+        id: "M2023-15",
+        status: "in_progress",
+        startTime: "2023-10-30T14:25:30",
+        estimatedCompletionTime: "2023-10-30T14:35:30",
+        package: {
+          id: "PKG-237",
+          destination: "TAG2",
+          priority: "normal",
+          weight: 1.25,
+          dimensions: { width: 15, height: 10, depth: 10 },
+        },
+        route: [],
+      },
+      history: [],
+      stats: {
+        completed: 157,
+        failed: 3,
+        totalDistance: 423, // kilometers
+      },
+    },
+    commands: {
+      available: ["scan_tag", "deliver_package", "pause", "resume"],
+      lastCommand: {
+        type: "",
+        timestamp: "",
+        source: "",
+        status: "",
+      },
+      manualControl: {
+        enabled: false,
+        leftMotor: 0,
+        rightMotor: 0,
+        deployPackage: false,
+      },
+    },
+    analytics: {
+      packagesDelivered: {
+        today: 0,
+        thisWeek: 5,
+        total: 124,
+      },
+      distanceTraveled: {
+        today: 0,
+        thisWeek: 350,
+        total: 12500,
+      },
+      efficiency: {
+        averageDeliveryTime: 180,
+        successRate: 98.5,
+        batteryUsagePerDelivery: 5.2,
+      },
+      errors: {
+        lineFollowingLost: 2,
+        rfidReadFailures: 1,
+        packageDetectionFailures: 0,
+        deploymentFailures: 0,
+      },
+    },
+  };
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+  return <Dashboard initialStatus={robotStatus} />;
 }
